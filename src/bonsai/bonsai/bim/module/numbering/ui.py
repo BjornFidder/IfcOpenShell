@@ -69,23 +69,26 @@ class BIM_PT_Numbering(Panel):
         box = layout.box()
         box.alignment = "EXPAND"
         box.label(text="Numbering Order")
-        # Create a grid for direction and precision
-        grid = box.grid_flow(row_major=True, align=True, columns=4, even_columns=True)
-        grid.label(text="Direction: ")
-        grid.prop(props, "x_direction", text="X")
-        grid.prop(props, "y_direction", text="Y")
-        grid.prop(props, "z_direction", text="Z")
-        grid.label(text="Precision: ")
-        grid.prop(props, "precision", index=0, text="X")
-        grid.prop(props, "precision", index=1, text="Y")
-        grid.prop(props, "precision", index=2, text="Z")
+        row = box.row(align=True)
+        if props.selected_toggle:
+            row.prop(props, "use_selection_order", text="Use Selection Order")
+        
+        if not props.selected_toggle or not props.use_selection_order:
+            grid = box.grid_flow(row_major=True, align=True, columns=4, even_columns=True)
+            grid.label(text="Direction: ")
+            grid.prop(props, "x_direction", text="X")
+            grid.prop(props, "y_direction", text="Y")
+            grid.prop(props, "z_direction", text="Z")
+            grid.label(text="Precision: ")
+            grid.prop(props, "precision", index=0, text="X")
+            grid.prop(props, "precision", index=1, text="Y")
+            grid.prop(props, "precision", index=2, text="Z")
 
-        # Axis order and reference point
-        grid = box.grid_flow(row_major=True, align=True, columns=4)
-        grid.label(text="Order:")
-        grid.prop(props, "axis_order", text="")
-        grid.label(text="Reference Point:")
-        grid.prop(props, "location_type", text="")
+            grid = box.grid_flow(row_major=True, align=True, columns=4)
+            grid.label(text="Order:")
+            grid.prop(props, "axis_order", text="")
+            grid.label(text="Reference Point:")
+            grid.prop(props, "location_type", text="")
 
     @classmethod
     def draw_numbering_systems(cls, layout, props):

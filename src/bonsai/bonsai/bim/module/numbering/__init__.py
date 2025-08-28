@@ -18,6 +18,7 @@
 
 import bpy
 from . import prop, operator, ui, workspace
+from bonsai.tool.numbering import SelectionOrder
 
 classes = (
     prop.BIMNumberingProperties,
@@ -38,10 +39,8 @@ def register():
     if not bpy.app.background:
         bpy.utils.register_tool(workspace.NumberingTool, after={"bim.structural_tool"}, separator=False, group=False)
     bpy.types.Scene.BIMNumberingProperties = bpy.props.PointerProperty(type=prop.BIMNumberingProperties)
+    
 
-
-# When someone disables the add-on, we need to unload everything we loaded. This
-# does the reverse of the register function.
 def unregister():
     if not bpy.app.background:
         bpy.utils.unregister_tool(workspace.NumberingTool)

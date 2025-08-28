@@ -38,6 +38,11 @@ class BIMNumberingProperties(PropertyGroup):
         name="Load settings", description="Select which saved settings to load", items=get_saved_settings_items
     )  # pyright: ignore[reportInvalidTypeForm]
 
+    def update_selected_toggle(self, context):
+        NumberFormatting.update_format_preview(self, context)
+        if not self.selected_toggle:
+            self.use_selection_order = False
+            
     selected_toggle: BoolProperty(
         name="Selected Only",
         description="Only number selected objects",
@@ -82,6 +87,12 @@ class BIMNumberingProperties(PropertyGroup):
         items=LoadSelection.get_possible_types,
         options={"ENUM_FLAG"},
         update=update_selected_types,
+    )  # pyright: ignore[reportInvalidTypeForm]
+
+    use_selection_order: BoolProperty(
+        name="Use Selection Order",
+        description="Use the order in which elements are selected for numbering",
+        default=False,
     )  # pyright: ignore[reportInvalidTypeForm]
 
     x_direction: EnumProperty(
@@ -309,6 +320,7 @@ class BIMNumberingProperties(PropertyGroup):
         parent_type: str
         parent_type_other: str
         selected_types: set[str]
+        use_selection_order: bool
         x_direction: str
         y_direction: str
         z_direction: str

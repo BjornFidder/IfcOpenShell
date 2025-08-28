@@ -234,6 +234,7 @@ class LoadSelection:
 
     @staticmethod
     def update_objects(prop, context):
+        SelectionOrder.update_selection_order()
         settings = Settings.to_dict(context.scene.BIMNumberingProperties)
         ifc_types, number_counts = LoadSelection.load_possible_types(
             LoadSelection.selected_objects, LoadSelection.get_parent_type(settings)
@@ -582,6 +583,40 @@ class ElementGeometry:
         return bbox_max - bbox_min
 
 
+class SelectionOrder:
+
+    indices = {}
+
+    @staticmethod
+    def get_ordered_selection_objects():
+        tagged_objects = []
+        for obj in bpy.data.objects:
+            order_index = SelectionOrder.indices.get(obj, -1)
+            if order_index >= 0:
+                tagged_objects.append((order_index, obj))
+        tagged_objects = sorted(tagged_objects, key=lambda item: item[0])
+        return [obj for _, obj in tagged_objects]
+
+    
+    @staticmethod
+    def update_selection_order():
+        if not bpy.context.selected_objects:
+            SelectionOrder.indices = {}
+            return
+        selection_order = SelectionOrder.get_ordered_selection_objects()
+        idx = 0
+        for obj in selection_order:
+            if not obj.select_get():
+                SelectionOrder.indices.pop(obj, None)
+            else:
+                SelectionOrder.indices[obj] = idx
+                idx += 1
+        for obj in bpy.context.selected_objects:
+            if obj not in selection_order:
+                SelectionOrder.indices[obj] = idx
+                idx += 1
+
+
 class Settings:
 
     pset_name = "Pset_NumberingSettings"
@@ -626,6 +661,7 @@ class Settings:
             "parent_type": props.parent_type,
             "parent_type_other": props.parent_type_other,
             "selected_types": list(props.selected_types),
+            "use_selection_order": props.use_selection_order,
             "x_direction": props.x_direction,
             "y_direction": props.y_direction,
             "z_direction": props.z_direction,
@@ -908,8 +944,9 @@ class Numbering(bonsai.core.tool.Numbering):
                 continue
             if element.is_a() in selected_types:
                 selected_elements.append(element)
-                elements_locations[element] = ObjectGeometry.get_object_location(obj, settings)
-                elements_dimensions[element] = ObjectGeometry.get_object_dimensions(obj)
+                if not settings["use_selection_order"]:
+                    elements_locations[element] = ObjectGeometry.get_object_location(obj, settings)
+                    elements_dimensions[element] = ObjectGeometry.get_object_dimensions(obj)
             elif settings.get("remove_toggle") and element.is_a() in possible_types:
                 remove_count += SaveNumber.remove_number(ifc_file, element, settings, numbers_cache)
 
@@ -918,6 +955,9 @@ class Numbering(bonsai.core.tool.Numbering):
                 {"WARNING"},
                 f"No elements selected or available for numbering, removed {remove_count} existing numbers.",
             )
+
+        if settings["use_selection_order"]:
+            selected_elements.sort(key=lambda elem: SelectionOrder.indices.get(tool.Ifc.get_object(elem), -1))
 
         storeys = Storeys.get_storeys(settings)
         res, _ = Numbering.number_elements(
